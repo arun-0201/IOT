@@ -31,21 +31,16 @@ void loop()
 #define LIGHT_SENSOR_PIN 36 // ESP32 pin GIOP36 (ADC0)
 
 void setup() {
-  // initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
-
-  // set the ADC attenuation to 11 dB (up to ~3.3V input)
   analogSetAttenuation(ADC_11db);
 }
 
 void loop() {
-  // reads the input on analog pin (value between 0 and 4095)
   int analogValue = analogRead(LIGHT_SENSOR_PIN);
 
   Serial.print("Analog Value = ");
   Serial.print(analogValue);   // the raw analog reading
 
-  // We'll have a few threshholds, qualitatively determined
   if (analogValue < 40) {
     Serial.println(" => Dark");
   } else if (analogValue < 800) {
@@ -97,9 +92,6 @@ void loop(){
   }
 }
 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // Digital Sensor Read 
@@ -143,11 +135,10 @@ void loop() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
-
+//PIR Sensor
 const int PIN_TO_SENSOR = 19; // GPIO19 pin connected to OUTPUT pin of sensor
-int pinStateCurrent   = LOW;  // current state of pin
-int pinStatePrevious  = LOW;  // previous state of pin
+int pinStateCurrent   = LOW;
+int pinStatePrevious  = LOW;
 
 void setup() {
   Serial.begin(9600);            // initialize serial
