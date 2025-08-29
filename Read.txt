@@ -203,14 +203,14 @@ void loop() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 Serial port communication using ESP32
 
-String receivedMessage = &quot;&quot;;
+String receivedMessage = "";
 void setup() {
 // put your setup code here, to run once:
 // Start the Serial Monitor at a baud rate of 115200
 Serial.begin(9600);
 
 // Print an initial message to the Serial Monitor
-Serial.println(&quot;ESP32 is ready. Please enter a message:&quot;);
+Serial.println("ESP32 is ready. Please enter a message:");
 }
 
 void loop() {
@@ -218,14 +218,14 @@ void loop() {
 while (Serial.available()) {
 char incomingChar = Serial.read(); // Read each character from the buffer
 
-if (incomingChar == &#39;\n&#39;) { // Check if the user pressed Enter (new line character)
+if (incomingChar == '\n') { // Check if the user pressed Enter (new line character)
 // Print the message
-Serial.print(&quot;You sent: &quot;);
+Serial.print("You sent: ");
 Serial.println(receivedMessage);
 
 // Clear the message buffer for the next input
 
-receivedMessage = &quot;&quot;;
+receivedMessage = "";
 } else {
 // Append the character to the message string
 receivedMessage += incomingChar;
@@ -239,7 +239,7 @@ Light Dependent Resistor
 void setup() {
 // initialize serial communication
 Serial.begin(9600);
-// initialize the ESP32&#39;s pin as an input
+// initialize the ESP32's pin as an input
 pinMode(DO_PIN, INPUT);
 }
 
@@ -247,9 +247,9 @@ void loop() {
 int lightState = digitalRead(DO_PIN);
 
 if (lightState == HIGH)
-Serial.println(&quot;It is dark&quot;);
+Serial.println("It is dark");
 else
-Serial.println(&quot;It is light&quot;);
+Serial.println("It is light");
 delay(1000);
 }
 
