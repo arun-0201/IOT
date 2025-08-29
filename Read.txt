@@ -26,6 +26,10 @@ void loop()
 	}
 }
 
+IR Sensor OUT → GPIO14 (IRSensor in code)
+LED → GPIO18 (LED in code)
+VCC (IR Sensor) → 3.3V (or 5V depending on module)
+GND → GND
 //////////////////////////////////////////////////
 //Light Sensor
 #define LIGHT_SENSOR_PIN 36 // ESP32 pin GIOP36 (ADC0)
@@ -55,6 +59,10 @@ void loop() {
 
   delay(500);
 }
+
+LDR Sensor OUT → GPIO36 (ADC0)
+VCC → 3.3V
+GND → GND
 //////////////////////////////////////////////////
 
 //fixed_ir_pir.ino
@@ -92,6 +100,10 @@ void loop(){
   }
 }
 
+IR Sensor OUT → GPIO13
+PIR Sensor OUT → GPIO14
+LED → GPIO35
+Power (3.3V/5V) & GND accordingly
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // Digital Sensor Read 
@@ -134,6 +146,9 @@ void loop() {
   delay(2000);
 }
 
+DHT11 Data → GPIO21
+VCC → 3.3V
+GND → GND
 ////////////////////////////////////////////////////////////////////////////////////////////
 //PIR Sensor
 const int PIN_TO_SENSOR = 19; // GPIO19 pin connected to OUTPUT pin of sensor
@@ -160,6 +175,9 @@ void loop() {
   }
 }
 
+PIR OUT → GPIO19
+VCC → 5V or 3.3V (check sensor type)
+GND → GND
 ////////////////////////////////////////////////////////////////////////////////////////////
 String receivedMessage = ""; // Variable to store the incoming message
 
@@ -243,6 +261,9 @@ Serial.println("It is light");
 delay(1000);
 }
 
+DO Pin (Digital Out of LDR Module) → GPIO13
+VCC → 3.3V/5V
+GND → GND
 ///////////////////////////////////////////////////////////////
 
 1. Traffic Light Simulation with Violation Alert
@@ -287,6 +308,11 @@ void loop() {
   delay(2000);
 }
 
+Red LED → GPIO23
+Yellow LED → GPIO22
+Green LED → GPIO21
+IR Sensor OUT → GPIO19
+VCC & GND as usual
 
 2. Smart Room Climate Monitor
 
@@ -337,7 +363,9 @@ void loop() {
   delay(2000); // Delay between readings
 }
 
-
+DHT22 Data → GPIO15
+Alert LED → GPIO25
+VCC & GND as usual
 
 3. Motion-Based Smart Lighting
 
@@ -369,6 +397,10 @@ void loop() {
   delay(500);
 }
 
+PIR Sensor OUT → GPIO27
+LDR (Analog) → GPIO36
+Light LED → GPIO26
+Power pins as per sensor
 
 4. Greenhouse Automation Prototype
 
@@ -409,6 +441,9 @@ void loop() {
   delay(2000);
 }
 
+DHT11 Data → GPIO13
+LDR (Analog) → GPIO34
+Fan/LED → GPIO32
 
 5. Door Security Alert System
 
@@ -439,6 +474,9 @@ void loop() {
   delay(1000);
 }
 
+PIR Sensor OUT → GPIO14
+IR Sensor OUT → GPIO12
+Alert LED → GPIO33
 
 6. User-Defined Light Preference Controller
 
@@ -478,3 +516,63 @@ void loop() {
   delay(1000);
 }
 
+LDR (Analog OUT) → GPIO36
+Serial input via USB (for setting brightness threshold)
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+// Potentiometer Example with ESP32
+#define POT_PIN 34   // ESP32 ADC pin connected to Potentiometer wiper
+
+void setup() {
+  Serial.begin(9600);         // Start Serial Monitor
+  analogSetAttenuation(ADC_11db); // Set ADC range (0-3.3V)
+  Serial.println("Potentiometer Example Initialized...");
+}
+
+void loop() {
+  int potValue = analogRead(POT_PIN);  // Read analog value (0–4095)
+  float voltage = (potValue / 4095.0) * 3.3; // Convert to voltage
+
+  Serial.print("Pot Value: ");
+  Serial.print(potValue);
+  Serial.print(" | Voltage: ");
+  Serial.print(voltage);
+  Serial.println(" V");
+
+  delay(500);
+}
+
+Potentiometer middle pin → GPIO34 (ADC)
+One side → 3.3V
+Other side → GND
+//////////////////////////////////////////////////////////////////////////////
+
+// LM35 Temperature Sensor with ESP32
+#define LM35_PIN 35  // ESP32 ADC pin connected to LM35 OUT
+
+void setup() {
+  Serial.begin(9600);         
+  analogSetAttenuation(ADC_11db); // Full range for ESP32 ADC
+  Serial.println("LM35 Temperature Sensor Initialized...");
+}
+
+void loop() {
+  int analogValue = analogRead(LM35_PIN);   // Read analog value (0–4095)
+  float voltage = (analogValue / 4095.0) * 3.3; // Convert ADC reading to voltage (0–3.3V)
+  float temperatureC = voltage * 100.0; // LM35 gives 10mV per °C (0.01V = 1°C)
+
+  Serial.print("Analog Value: ");
+  Serial.print(analogValue);
+  Serial.print(" | Voltage: ");
+  Serial.print(voltage);
+  Serial.print(" V | Temperature: ");
+  Serial.print(temperatureC);
+  Serial.println(" °C");
+
+  delay(1000);
+}
+
+LM35 VCC → 3.3V
+LM35 GND → GND
+LM35 OUT → GPIO35 (ADC)
