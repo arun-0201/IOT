@@ -196,8 +196,6 @@ Serial port communication using ESP32
 
 String receivedMessage = "";
 void setup() {
-// put your setup code here, to run once:
-// Start the Serial Monitor at a baud rate of 115200
 Serial.begin(9600);
 
 // Print an initial message to the Serial Monitor
@@ -224,7 +222,8 @@ receivedMessage += incomingChar;
 }
 }
 
-Light Dependent Resistor
+//////////////////////////////////////////////////////////////
+//Light Dependent Resistor
 #define DO_PIN 13 
 
 void setup() {
@@ -244,7 +243,7 @@ Serial.println("It is light");
 delay(1000);
 }
 
-
+///////////////////////////////////////////////////////////////
 
 1. Traffic Light Simulation with Violation Alert
 
