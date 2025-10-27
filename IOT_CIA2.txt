@@ -1,0 +1,519 @@
+-----------
+Rpi Exp
+----------
+
+from gpiozero import InputDevice
+from timer import sleep
+
+sensor = InputDevice(4)
+while True:
+	if sensor.is_active():
+		print("Not detected..")
+	else:
+		print("Detected..")
+	sleep(1)
+
+import Rpi.GPIO as GPIO
+from time import sleep
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(18,GPIO.OUT,initial=GPIO.LOW)
+
+while True:
+	GPIO.output(18,GPIO.HIGH)
+	sleep(1)
+	GPIO.output(18,GPIO.LOW)
+	sleep(1)
+
+
+------------------
+Rpi for picamera
+------------------
+
+from picamera import PiCamera
+from time import sleep
+
+c = PiCamera()
+sleep(2)
+c.resolution = (1280,720)
+c.vflip = True
+c.contrast = 10
+
+fn = "/home/pi/Pictures/video_"+str(time())+".h264"
+c.start_recording(fn)
+c.wait_recording(5)
+c.stop_recording()
+
+
+
+from picamera2 import Picamera2,Preview
+from time import sleep
+from libcamera import transform
+import Rpi.GPIO as GPIO
+
+spin=11
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(spin,GPIO.IN)
+if(GPIO.input(spin) == 0):
+	c = Picamera2()
+	c.start_preview(Preview.QTGL, transform = 	Transform(hflip=True,vflip=True))
+	c.start()
+	c.start_and_capture_file("/home/project/Pictures_{i}.jpg")
+	c.stop_preiew()
+	c.close()
+
+
+
+
+
+
+from libcamera import Transform
+from picamera2 import Picamera2, Preview
+from picamera2.encoders import H264Encoder
+import RPi.GPIO as GPIO
+from time import sleep
+
+picam2 = Picamera2()
+sensorpin = 11
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(sensorpin, GPIO.IN)
+
+video_config = picam2.create_video_configuration()
+picam2.configure(video_config)
+
+while True:
+    if GPIO.input(sensorpin) == 0:
+        encoder = H264Encoder(10000000)
+        picam2.start_preview(Preview.QTGL, transform=Transform(hflip=True, vflip=True))
+        picam2.start_recording(encoder, 'myvideo.h264')
+        sleep(5)
+        picam2.stop_recording()
+        picam2.stop_preview()
+    else:
+        print('No object detected')
+    sleep(2)
+
+
+
+
+
+from picamera2 import Picamera2, Preview
+from time import sleep
+from libcamera import Transform
+import RPi.GPIO as GPIO
+
+picam2 = Picamera2()
+sensorpin = 11
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(sensorpin, GPIO.IN)
+
+while True:
+    if GPIO.input(sensorpin) == 0:
+        picam2.start_preview(Preview.QTGL, transform=Transform(hflip=True, vflip=True))
+        picam2.start()
+        picam2.start_and_capture_file(f"/home/project/Pictures/ir_cap_img.jpg")
+        sleep(2)
+        picam2.stop_preview()
+        picam2.stop()
+    else:
+        print('No object detected')
+    sleep(2)
+
+
+
+
+-------------------
+WiFi Based Comm
+--------------------
+
+
+#include<WiFi.h>
+#include<HTTPClient.h>
+const char *ssid = ""
+const char *password = ""
+void setup()
+{
+Srial.begin(115200)
+WiFi.begin(ssid,password);
+while(WiFi.status() != WL_CONNECTED)
+{
+Serial.print(".");
+delay(100);
+}
+}
+void loop()
+{
+HTTPClient http;
+http.begin("http://192.168.243.153:8000/get-sensor?temp=243");
+int httpcode = http.GET();
+if(httpCode>0)
+{
+String pl = http.getString();
+Serial.println(httpCode);
+Serial.println(pl);
+}
+else
+{
+Serial.println("Error");
+}
+delay(10000);
+}
+
+
+
+from flask import Flask,request
+app = Flask(__name__)
+l=[]
+@app.route("/")
+def index():
+	return "OK",200
+@app.route("/get-sensor",methods = ['GET'])
+def data():
+	if request.method == 'GET':
+		args = request.args
+		tmp = args.get('temp')
+		l.append(tmp)
+		return tmp
+	else:
+		return "Wrong"	
+@app.route('/get')
+def data1():
+	sd = '<ul>'
+	for i in l:
+		sd+=f"<li>{i}</li>"
+	sd+="</ul>"
+	return sd
+if __name__ == '__main__':
+	app.run(debug=True,port=8000,host='0.0.0.0')
+
+
+
+----------
+MQTT
+---------
+
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+#define Ledpin 13
+#define IRpin 14
+
+// WIFI credentials
+const char* ssid = "ssid";
+const char* password = "password";
+
+// MQTT Broker IP address
+const char* mqtt_server = "192.168.173.114";
+
+char tempString[20];  // Buffer to hold the message
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// Callback function when a message is received
+void callback(char* topic, byte* message, unsigned int length) {
+  Serial.print("Message arrived on topic: ");
+  Serial.println(topic);
+  
+  // Create a temporary string to hold the message
+  String messageTemp;
+  for (int i = 0; i < length; i++) {
+    messageTemp += (char)message[i];
+  }
+
+  Serial.print("Message: ");
+  Serial.println(messageTemp);
+
+  // Check if the received topic is the acknowledgment topic
+  if (String(topic) == "ESP32/Acknowledgement") {
+    Serial.println("Acknowledgment received from Raspberry Pi!");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(Ledpin, OUTPUT);
+  pinMode(IRpin, INPUT);
+
+  // Connect to WiFi
+  Serial.println("Connecting to WiFi");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Connected to WiFi with IP: ");
+  Serial.println(WiFi.localIP());
+
+  // Setup MQTT client and set callback
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+
+  // Connect to the MQTT broker
+  while (!client.connected()) {
+    Serial.println("Connecting to MQTT...");
+    if (client.connect("espClient")) {
+      Serial.println("Connected to MQTT broker");
+      client.subscribe("ESP32/Acknowledgement");  // Subscribe to acknowledgment topic
+    } else {
+      Serial.print("Failed to connect, state: ");
+      Serial.println(client.state());
+      delay(2000);
+    }
+  }
+}
+
+void loop() {
+  // Ensure the MQTT client stays connected and processes incoming messages
+  client.loop();
+
+  bool IRstatus = digitalRead(IRpin);
+  if (IRstatus == true) {
+    digitalWrite(Ledpin, LOW);  // Turn off the LED
+    strcpy(tempString, "LED OFF");
+  } else {
+    digitalWrite(Ledpin, HIGH);  // Turn on the LED
+    strcpy(tempString, "LED ON");
+  }
+
+  // Publish the status to the MQTT topic
+  client.publish("ESP32/Temperaturedataread", tempString);
+
+
+  delay(2000);
+}
+
+
+Raspberry Pi :
+
+
+Run the following commands : 
+* Open a terminal and run : 
+ifconfig
+* Note the ip address in wlan0 section (Eg 172.168.134.35)
+* sudo apt install mosquitto mosquitto-clients
+* sudo systemctl status mosquito
+* sudo systemctl enable mosquitto.service
+* sudo nano /etc/mosquitto/mosquitto.conf
+(Open the File and add the below content to the last line)
+listener 1883
+allow_anonymous true
+
+* Install paho package by the command : sudo apt install python3-paho-mqtt
+* The code to be run in Raspberry Pi is given below:
+
+Python Code in Pi
+
+import paho.mqtt.client as mqtt
+
+broker_address="192.168.173.114" // ip of the mobile device we noted from ifconfig command
+client=mqtt.Client("PiClient")
+client.connect(broker_address)
+
+def on_message(client,userdata,message):
+    print("Message received"+message.payload.decode("utf-8"))
+    client.publish("ESP32/Acknowledgement","Message received from from ESP32, sent from Pi")
+
+client.on_message=on_message
+client.subscribe("ESP32/Temperaturedataread")
+client.loop_start()
+while True:
+    pass
+
+Run the code using the run button in thonny, no need cli commands.
+
+------
+I2C
+------
+
+#include <Wire.h>
+  const int ledPin = 13;
+  void setup() 
+  {
+    Wire.begin(0x8);
+    Wire.onReceive(receiveEvent);
+    pinMode(ledPin, OUTPUT);
+    digitalWrite(ledPin, LOW);
+  }
+    void receiveEvent(int n) 
+  {
+    while (Wire.available()) 
+    { // loop through all but the last
+    char c = Wire.read(); // receive byte as a character
+    digitalWrite(ledPin, c);
+  }
+}
+  void loop() 
+  {
+    delay(100);
+}
+Rpi
+
+from smbus import SMBus
+sm = SMBus(1);
+addr=0x8
+numb=1
+while numb==1:
+	c = input(">>>")
+	if c==1:
+		Wire.write_byte(addr,0x1)
+	elif c==0:
+		Wire.write_byte(addr,0x0)
+	else:
+		numb=0
+
+	
+
+-------------
+FreeRTOS
+-------------
+
+TaskHandle_t xHandle1,xHandle2;
+void setup() {
+Serial.begin(115200);
+xTaskCreate(taskOne,"TaskOne",10000,NULL,1,&xHandle1);
+Serial.println("inside setup");
+}
+void loop() {
+delay(1000);
+}
+void taskOne( void * parameter ){
+int i=0;
+Serial.println("Hello from task 1");
+while(i<4){
+Serial.print("Task 1:"); Serial.println(i);
+if(i==2){
+xTaskCreate(taskTwo,"TaskTwo",10000,NULL,2,&xHandle2);
+}
+i++;
+}
+Serial.println("Ending task 1");
+vTaskDelete( NULL );
+}
+void taskTwo( void * parameter){
+int i=0;
+Serial.println("Hello from task 2");
+while(i<4){
+Serial.print("Task 2:");
+Serial.println(i);
+i++;
+}
+Serial.println("Ending task 2");
+vTaskDelete( NULL );
+}
+
+
+----------------
+MUTEX - FreeRTOS
+-----------------
+
+SemaphoreHandle_t semvar;
+void setup() {
+Serial.begin(115200);
+if ( semvar == NULL ){
+semvar = xSemaphoreCreateBinary(); // Create a binary semaphore
+if ( ( semvar ) != NULL )
+xSemaphoreGive(( semvar));
+}
+xTaskCreate(TaskLed, "Led", 10000, NULL, 1, NULL );
+xTaskCreate(TaskBlink, "LedBlink", 10000, NULL, 1, NULL );
+}
+void loop() {}
+void TaskLed(void *pvParameters){
+Serial.println("inside taskled");
+pinMode(8, OUTPUT);
+for(;;){
+if ( xSemaphoreTake( semvar, ( TickType_t ) 5 ) == pdTRUE ){
+Serial.println("semaphore taken inside taskled");
+digitalWrite(8,HIGH);
+delay(5000);
+xSemaphoreGive(semvar);
+}
+else{
+digitalWrite(8,LOW);
+}}}
+void TaskBlink(void *pvParameters){
+Serial.println("inside taskblink");
+pinMode(7, OUTPUT);
+for(;;){
+if (xSemaphoreTake(semvar, ( TickType_t ) 10 ) == pdTRUE) {
+Serial.println("semaphore taken inside taskblink");
+digitalWrite(7,HIGH);
+delay(5000);
+xSemaphoreGive(semvar);
+delay(1000);
+}
+else{
+digitalWrite(7,LOW);
+}}}
+
+
+------------------
+ThingSpeak
+------------------
+
+#include <WiFi.h>
+#include "ThingSpeak.h"
+#define ADC_VREF_mV 3300.0
+#define ADC_RESOLUTION 4096.0
+#define PIN_LM35 35
+/*#include “DHT.h”
+#define DHTPIN 4
+#define DHTTYPE DHT11 
+DHT dht(DHTPIN, DHTTYPE); */
+const char* ssid = "xxxxx"; 
+const char* password = "yyyyyy"; 
+WiFiClient client;
+unsigned long myChannelNumber = zzzzzz; 
+const char * myWriteAPIKey = "mmmmmmmmmmmm";
+
+unsigned long lastTime = 0;
+unsigned long timerDelay = 10000;
+
+float tempC;
+void setup()
+{
+pinMode (PIN_LM35,INPUT);
+Serial.begin(115200); 
+WiFi.mode(WIFI_STA);
+ThingSpeak.begin(client); 
+}
+
+void loop() {
+if ((millis() - lastTime) > timerDelay)
+{
+
+if(WiFi.status() != WL_CONNECTED){
+Serial.print("Attempting to connect");
+while(WiFi.status() != WL_CONNECTED){
+WiFi.begin(ssid, password);
+delay(5000);
+}
+Serial.println("\nConnected.");
+}
+
+int adcVal = analogRead(PIN_LM35);
+
+float milliVolt = adcVal * (ADC_VREF_mV / ADC_RESOLUTION);
+
+float tempC = milliVolt / 10;
+//float tempC=25;
+Serial.print("Temperature (oC): ");
+Serial.println(tempC);
+
+int x = ThingSpeak.writeField(myChannelNumber, 1, tempC, myWriteAPIKey);
+
+if(x == 200)
+{
+Serial.println("Channel update successful.");
+}
+else
+{
+Serial.println("Problem updating channel. HTTP error code " + String(x));
+}
+lastTime = millis();
+}
+}
